@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Panel del Docente (Publisher)</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="panel-header docente">
+            <h2>Panel del Docente (Publisher)</h2>
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label for="sala-docente">Seleccionar Clase (Sala):</label>
+                <select id="sala-docente">
+                    <option value="clase-a">Clase A (Software)</option>
+                    <option value="clase-b">Clase B (Redes)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="mensaje-tarea">Mensaje de Notificación:</label>
+                <input type="text" id="mensaje-tarea" placeholder="Ej: Nueva tarea de Arquitectura...">
+            </div>
+            <button id="btn-publicar">Generar Evento</button>
+            <div id="status">Conectado al Broker como Docente.</div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // --- LÓGICA DEL PUBLISHER (Docente) ---
+        const btnPublicar = document.getElementById('btn-publicar');
+        const inputMensaje = document.getElementById('mensaje-tarea');
+        const selectSalaDocente = document.getElementById('sala-docente');
+
+        // El Docente publica el evento
+        btnPublicar.addEventListener('click', () => {
+            const sala = selectSalaDocente.value;
+            const mensaje = inputMensaje.value;
+
+            if (mensaje && sala) {
+                socket.emit('publicar-tarea', {
+                    sala: sala,
+                    mensaje: mensaje
+                });
+                inputMensaje.value = "";
+            }
+        });
+
+        // El Docente envía el evento "escribiendo"
+        inputMensaje.addEventListener('keyup', () => {
+            const sala = selectSalaDocente.value;
+            socket.emit('docente-escribiendo', { sala: sala });
+        });
+
+        socket.on('connect', () => {
+            document.getElementById('status').textContent = "Conectado al Broker como Docente.";
+        });
+
+    </script>
+</body>
+</html>

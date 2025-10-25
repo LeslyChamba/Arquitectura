@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Panel del Estudiante (Subscriber)</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="panel-header">
+            <h2>Panel del Estudiante (Subscriber)</h2>
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label for="sala-estudiante">Seleccionar Clase (Sala):</label>
+                <select id="sala-estudiante">
+                    <option value="clase-a">Clase A (Software)</option>
+                    <option value="clase-b">Clase B (Redes)</option>
+                </select>
+                <button id="btn-unirse" style="margin-top: 10px;">Unirse a la Sala</button>
+            </div>
+            
+            <hr>
+            
+            <h3>Notificaciones en Tiempo Real</h3>
+            <div id="typing-indicator"></div>
+            <ul id="lista-notificaciones">
+                </ul>
+            <div id="status">(Desconectado. Únete a una sala para recibir notificaciones.)</div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // --- LÓGICA DEL SUBSCRIBER (Estudiante) ---
+        const btnUnirse = document.getElementById('btn-unirse');
+        const selectSalaEstudiante = document.getElementById('sala-estudiante');
+        const listaNotificaciones = document.getElementById('lista-notificaciones');
+        const statusDiv = document.getElementById('status');
+        const typingIndicator = document.getElementById('typing-indicator');
+
+        // El Estudiante se une a la sala
+        btnUnirse.addEventListener('click', () => {
+            const salaSeleccionada = selectSalaEstudiante.value;
+            socket.emit('unirse-sala', salaSeleccionada);
+            
+            listaNotificaciones.innerHTML = ""; 
+            statusDiv.textContent = `Conectando a '${salaSeleccionada}'...`;
+            btnUnirse.textContent = "Cambiando de Sala...";
+            setTimeout(() => { btnUnirse.textContent = "Unirse / Cambiar de Sala"; }, 1000);
+        });
+
+        // Escucha por la confirmación de unión
+        socket.on('conexion-exitosa', (mensaje) => {
+            statusDiv.textContent = mensaje;
+        });
+
+        // Escucha por nuevas notificaciones
+        socket.on('nueva-notificacion', (data) => {
+            typingIndicator.textContent = ""; // Borra el "escribiendo..."
+            const item = document.createElement('li');
+            item.className = 'notificacion';
+            item.innerHTML = `
+                <strong>${data.mensaje}</strong>
+                <div class="timestamp">${data.timestamp}</div>
+            `;
+            listaNotificaciones.prepend(item);
+        });
+
+        // Escucha si el docente está escribiendo
+        let typingTimer;
+        socket.on('alguien-escribiendo', () => {
+            typingIndicator.textContent = "El docente está escribiendo...";
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(() => {
+                typingIndicator.textContent = "";
+            }, 2500); // El mensaje desaparece después de 2.5 seg
+        });
+
+    </script>
+</body>
+</html>
